@@ -16,12 +16,14 @@ These [clusters](https://en.wikipedia.org/wiki/Zigbee#Cluster_library) are defin
 The sample will first boot and start looking for a Zigbee coordinator - in pairing mode. The onboard LED will be flashing once a second while in this mode. Once a suitable network is found, the LED will briefly flash 3 times and remain off.
 
 ### Factory Reset
-A factory reset will make b-parasite forget its network pairing information and switch to pairing mode. There are two (mutually exclusive) methods to perform a factory reset, controlled by the `CONFIG_PRST_ZB_FACTORY_RESET_METHOD` config flag.
+A factory reset will make b-parasite forget its network pairing information and switch to pairing mode. There are several mutually exclusive methods to perform a factory reset, controlled by the `CONFIG_PRST_ZB_FACTORY_RESET_METHOD` config flag.
 
-#### Factory Reset Method 1 (default) - Double reset
-Resetting b-parasite twice in the timestamp of 5 seconds will perform a factory reset. With this method, both shorting the `RST` pin to ground and removing-inserting the battery counts as a reset.
+The default method depends on board revision: v2.0.0+ boards use SW1, and older boards use double reset.
 
-For better results, wait > 1 and < 5 seconds second between the resets. The LED will flash a total of 8 times to indicate it worked.
+#### Factory Reset Method 1 - Double reset
+Resetting b-parasite twice within 5 seconds will perform a factory reset. With this method, both shorting the `RST` pin to ground and removing-inserting the battery count as a reset.
+
+For better results, wait more than 1 second and less than 5 seconds between the resets. The LED will flash a total of 8 times to indicate it worked.
 
 #### Factory Reset Method 2 - Reset Pin
 In this method, there's a distinction between two reset modes.
@@ -33,6 +35,9 @@ The device enters this mode when it is powered. For example, swapping an old bat
 If the device's RESET pin is briefly grounded, the device will effectively be **factory reset**. The device will leave its previous network and start looking for a new one.
 
 While it works, this method can be finicky - an accidental pin reset will perform an unwanted factory reset.
+
+#### Factory Reset Method 3 - SW1
+On v2.0.0+ boards, holding SW1 while the device starts will schedule a factory reset. Keep SW1 pressed for 5 seconds to confirm the reset.
 
 ## Configs
 Available options in `Kconfig`. Notable options:

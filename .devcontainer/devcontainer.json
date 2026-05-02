@@ -1,6 +1,9 @@
 {
 	"name": "nrf-connect:v2.7",
-	"image": "nordicplayground/nrfconnect-sdk:v2.7-branch",
+	"image": "nordicplayground/nrfconnect-sdk:v2.7-branch@sha256:7b1b480ce6840781e888d31b56d643357b71f6cfc06ca1b7edab408f2437c939",
+	"runArgs": [
+		"--platform=linux/amd64"
+	],
 	"features": {
 	},
 	"customizations": {

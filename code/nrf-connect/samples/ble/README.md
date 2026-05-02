@@ -1,5 +1,5 @@
 # Bluetooth Low Energy (BLE)
-In this sample, b-parasite sensors are periodically read and broadcast using Bluetooth Low Energy (BLE) dvertising packets.
+In this sample, b-parasite sensors are periodically read and broadcast using Bluetooth Low Energy (BLE) advertising packets.
 
 ## Configuration
 Available configurations and their default values are in [`Kconfig`](./Kconfig). They are set in [`prj.conf`](./prj.conf). Here are some notable examples.
@@ -8,13 +8,13 @@ Available configurations and their default values are in [`Kconfig`](./Kconfig).
 To save energy, the board spends most of the time in a "deep sleep" state, in which most peripherals and radio are completely turned off. The period of sleep is controlled by the `PRST_SLEEP_DURATION_SEC` config.
 
 ### Advertising Duration
-When it wakes up, the sample reads all sensors and keep broadcasting advertising packets for `PRST_BLE_ADV_DURATION_MSEC` before going back to sleep.
+When it wakes up, the sample reads all sensors and keeps broadcasting advertising packets for `PRST_BLE_ADV_DURATION_MSEC` before going back to sleep.
 
 ### Advertising Packet Encoding
 There are different ways to encode the sensor data in a BLE advertising packet.
 
 #### BTHome Encoding
-[BTHome](https://bthome.io) is a new (as of Dec/2022) open standard for encoding sensor data in BLE applications. [Home Assistant](https://www.home-assistant.io/integrations/bthome/) supports it out of the box. This makes the deployment extra convenient, since no additional configuration is needed - Home Assistant will automatically detect b-parasites in range.
+[BTHome](https://bthome.io) is an open standard for encoding sensor data in BLE applications. [Home Assistant](https://www.home-assistant.io/integrations/bthome/) supports it out of the box. This makes the deployment extra convenient, since no additional configuration is needed - Home Assistant will automatically detect b-parasites in range.
 
 What's even more interesting is that by employing [ESPHome](https://esphome.io/) bridges with the [`bluetooth_proxy`](https://esphome.io/components/bluetooth_proxy.html) component, the range of BLE coverage can be transparently increased. Multiple ESPHome bridges will forward received BLE broadcasts to Home Assistant.
 
@@ -27,7 +27,7 @@ There are two versions of BTHome encodings supported by this sample:
 #### b-parasite Encoding
 `PRST_BLE_ENCODING_BPARASITE_V2=y` selects the legacy encoding, used historically in this project. This is the encoding that the [`b_parasite`](https://esphome.io/components/sensor/b_parasite.html) ESPHome component understands.
 
-With this encoding and a ESPHome + `b_parasite` component, this is an usual deployment topology:
+With this encoding and an ESPHome + `b_parasite` component, this is a usual deployment topology:
 
 ![Topology with Legacy encoding + Home Assistant](./media/drawings/ble-bparasite-encoding.png)
 
@@ -42,7 +42,7 @@ While in deep sleep, the board consumes around `3.0 uA`:
 
 ![Sleep current consumption](./media/power-profile/sleep.png)
 
-In the active broadcasting state, the average power consumption is highly dependant on the advertising interval.
+In the active broadcasting state, the average power consumption is highly dependent on the advertising interval.
 
 With the default settings (in the `[30, 40] ms` range), we see an average of around `810 uA`:
 

@@ -28,17 +28,27 @@ int prst_shtc3_read(prst_shtc3_read_t *out) {
   k_msleep(1);
 
   // Request measurement.
-  RET_IF_ERR(write_cmd(PRST_SHTC3_CMD_MEASURE_TFIRST_NORMAL));
+  int err = write_cmd(PRST_SHTC3_CMD_MEASURE_TFIRST_NORMAL);
+  if (!err) {
+    // Reading in normal (not low power) mode can take up to 12.1 ms, according to
+    // the datasheet.
+    k_msleep(20);
 
-  // Reading in normal (not low power) mode can take up to 12.1 ms, according to
-  // the datasheet.
-  k_msleep(20);
-
-  // Read response.
-  RET_IF_ERR(i2c_read_dt(&shtc3, buff, 6));
+    // Read response.
+    err = i2c_read_dt(&shtc3, buff, 6);
+  }
 
   // Put the sensor in sleep mode.
-  RET_IF_ERR(write_cmd(PRST_SHTC3_CMD_SLEEP));
+  int sleep_err = write_cmd(PRST_SHTC3_CMD_SLEEP);
+  if (sleep_err) {
+    LOG_ERR("Error %d putting SHTC3 to sleep", sleep_err);
+    if (!err) {
+      err = sleep_err;
+    }
+  }
+  if (err) {
+    return err;
+  }
 
   // TODO: verify the CRC of the measurements. The function is described in the
   // datasheet.

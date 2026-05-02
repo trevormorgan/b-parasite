@@ -14,11 +14,19 @@ I used an inexpensive debugging probe from Aliexpress called `nanoDAP` from `Mus
 
 After connecting the debugging probe via usb and connecting the b-parasite as described in the wiki, flashing was easy and fast.
 
-For a complete flashing of softdevice and firmware use the provided python script. Assuming you put the `*.hex` files in default locations it boils down to one simple command:
+For a complete flashing of a Zephyr firmware image, build the firmware first and then use the provided Python script. By default it expects the BLE sample output at:
+
+```
+../../code/nrf-connect/samples/ble/build_nrf52840_2.0.0/zephyr/zephyr.hex
+```
+
+Assuming that file exists, flashing boils down to:
 
 ```
 python ./flash_firmware.py
 ```
+
+For legacy firmware images that still need a SoftDevice, pass its hex file explicitly with `--softdevice`.
 
 For help and documentation of the available command line flags use
 

@@ -98,12 +98,12 @@
     <comp ref="D1">
       <value>LL4148</value>
       <footprint>Diode_SMD:D_MiniMELF</footprint>
-      <datasheet>http://www.vishay.com/docs/85557/ll4148.pdf</datasheet>
+      <datasheet>https://datasheet.lcsc.com/lcsc/2205131645_JUXING-LL4148_C3011166.pdf</datasheet>
       <fields>
-        <field name="LCSC">C9808</field>
+        <field name="LCSC">C3011166</field>
       </fields>
       <libsource lib="Diode" part="LL4148" description="100V 0.15A standard switching diode, MiniMELF"/>
-      <property name="LCSC" value="C9808"/>
+      <property name="LCSC" value="C3011166"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="parasite.kicad_sch"/>
       <property name="ki_description" value="100V 0.15A standard switching diode, MiniMELF"/>

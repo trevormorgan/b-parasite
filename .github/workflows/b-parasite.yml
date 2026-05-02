@@ -7,13 +7,21 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     name: Check code format
+    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check clang-format
         uses: jidicula/clang-format-action@v4.9.0
         with:
@@ -23,6 +31,7 @@ jobs:
   build-blinky:
     runs-on: ubuntu-latest
     name: Build blinky
+    timeout-minutes: 30
     needs:
       - lint
     steps:
@@ -39,6 +48,7 @@ jobs:
   build-input:
     runs-on: ubuntu-latest
     name: Build input
+    timeout-minutes: 30
     needs:
       - lint
     steps:
@@ -55,6 +65,7 @@ jobs:
   build-soil-read-loop:
     runs-on: ubuntu-latest
     name: Build soil_read_loop
+    timeout-minutes: 30
     needs:
       - lint
     steps:
@@ -72,9 +83,10 @@ jobs:
     strategy:
       matrix:
         soc: [nrf52840, nrf52833]
-        revision: [1.1.0, 1.2.0, 2.0.0]
+        revision: [1.0.0, 1.1.0, 1.2.0, 2.0.0]
     runs-on: ubuntu-latest
     name: Build ble ${{ matrix.soc }}@${{ matrix.revision }}
+    timeout-minutes: 30
     needs:
       - lint
     steps:
@@ -96,6 +108,7 @@ jobs:
         revision: [1.2.0, 2.0.0]
     runs-on: ubuntu-latest
     name: Build zigbee ${{ matrix.soc }}@${{ matrix.revision }}
+    timeout-minutes: 45
     needs:
       - lint
     steps:

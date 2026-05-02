@@ -35,11 +35,15 @@ int prst_detect_double_reset(prst_double_reset_callback_t on_double_reset) {
 
   RET_IF_ERR(fs_open(&flag_file, flag_filename, FS_O_CREATE | FS_O_RDWR));
 
-  char buff[sizeof(flag_prefix)];
-  RET_CHECK(fs_read(&flag_file, buff, sizeof(buff)) >= 0, "Unable to read file");
+  char buff[sizeof(flag_prefix)] = {0};
+  ssize_t read = fs_read(&flag_file, buff, sizeof(buff));
+  if (read < 0) {
+    RET_IF_ERR(fs_close(&flag_file));
+    return read;
+  }
 
   // Consider it a double reset if the flag is present in the FS.
-  if (strcmp(buff, flag_prefix) == 0) {
+  if (read == sizeof(flag_prefix) && memcmp(buff, flag_prefix, sizeof(flag_prefix)) == 0) {
     RET_IF_ERR(fs_close(&flag_file));
     RET_IF_ERR(erase_flag());
     prst_debug_counters_increment("double_reset");
@@ -53,6 +57,7 @@ int prst_detect_double_reset(prst_double_reset_callback_t on_double_reset) {
   ssize_t written = fs_write(&flag_file, flag_prefix, sizeof(flag_prefix));
   if (written != sizeof(flag_prefix)) {
     LOG_ERR("fs_write returned %d, expected %d", written, sizeof(flag_prefix));
+    RET_IF_ERR(fs_close(&flag_file));
     return -1;
   }
 

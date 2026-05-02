@@ -34,6 +34,9 @@ static prst_sensors_t sensors;
 static bool joining_signal_received = false;
 static bool stack_initialised = false;
 
+#define PRST_ZB_ILLUMINANCE_MEASURED_VALUE_UNKNOWN 0xffff
+#define PRST_ZB_ILLUMINANCE_MEASURED_VALUE_MAX 0xfffe
+
 static void led_flashing_cb(struct k_timer *timer) {
   prst_led_toggle();
 }
@@ -176,8 +179,13 @@ void update_sensors_cb(zb_uint8_t arg) {
                          PRST_ZB_ZCL_ATTR_SOIL_MOISTURE_VALUE_ID,
                          &soil_moisture);
 
-  // Illuminance in 10000 * log_10(lux) + 1.
-  zb_int16_t log_lux = 10000 * log10((float)sensors.photo.brightness) + 1;
+  // Illuminance in 10000 * log_10(lux) + 1. 0xffff means invalid/unknown.
+  zb_uint16_t log_lux = PRST_ZB_ILLUMINANCE_MEASURED_VALUE_UNKNOWN;
+  if (sensors.photo.brightness > 0) {
+    log_lux =
+        MIN(10000 * log10f((float)sensors.photo.brightness) + 1,
+            PRST_ZB_ILLUMINANCE_MEASURED_VALUE_MAX);
+  }
   prst_zb_set_attr_value(ZB_ZCL_CLUSTER_ID_ILLUMINANCE_MEASUREMENT,
                          ZB_ZCL_ATTR_ILLUMINANCE_MEASUREMENT_MEASURED_VALUE_ID,
                          &log_lux);
@@ -305,12 +313,11 @@ int main(void) {
 
   prst_debug_counters_increment("boot");
 
-  log_reset_reason_counter();
+  __ASSERT_NO_MSG(!prst_zb_factory_reset_check());
 
+  log_reset_reason_counter();
   LOG_INF("Dumping debug counters:");
   prst_debug_counters_get_all(dump_counter);
-
-  __ASSERT_NO_MSG(!prst_zb_factory_reset_check());
 
   prst_zb_attrs_init(&dev_ctx);
 

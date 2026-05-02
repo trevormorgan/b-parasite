@@ -13,15 +13,36 @@ inputs:
   cmake-extra:
     description: "Extra CMake arguments"
     default: ""
+  output-bin:
+    description: "Output hex artifact filename"
+    default: ""
+  sdk-image:
+    description: "nRF Connect SDK Docker image"
+    default: "nordicplayground/nrfconnect-sdk:v2.7-branch@sha256:7b1b480ce6840781e888d31b56d643357b71f6cfc06ca1b7edab408f2437c939"
 runs:
   using: "composite"
   steps:
     - run: |
-        docker run --rm -v ${GITHUB_WORKSPACE}:/repo \
-          nordicplayground/nrfconnect-sdk:v2.7-branch \
+        docker run --rm --platform linux/amd64 -v "${GITHUB_WORKSPACE}:/repo" \
+          "${{ inputs.sdk-image }}" \
           west build \
             --build-dir /repo/${{ inputs.sample-dir }}/build_${{ inputs.soc }}_${{ inputs.revision }} \
             --pristine \
             --board bparasite@${{ inputs.revision }}/${{ inputs.soc }} \
             /repo/${{ inputs.sample-dir }} -- ${{ inputs.cmake-extra }}
       shell: bash
+    - run: |
+        if [ -n "${{ inputs.output-bin }}" ]; then
+          artifact_dir="${RUNNER_TEMP}/b-parasite-artifacts"
+          mkdir -p "${artifact_dir}"
+          cp "${{ inputs.sample-dir }}/build_${{ inputs.soc }}_${{ inputs.revision }}/zephyr/zephyr.hex" \
+            "${artifact_dir}/${{ inputs.output-bin }}"
+        fi
+      shell: bash
+    - uses: actions/upload-artifact@v4
+      if: ${{ inputs.output-bin != '' }}
+      with:
+        name: ${{ inputs.output-bin }}
+        path: ${{ runner.temp }}/b-parasite-artifacts/${{ inputs.output-bin }}
+        if-no-files-found: error
+        retention-days: 30

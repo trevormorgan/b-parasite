@@ -29,6 +29,8 @@ This repository also hosts a few different firmware samples for b-parasite.
 # Documentation
 Information about how to order, assemble, build the samples, protect the sensor and flash the firmware is on [the Wiki](https://github.com/rbaron/b-parasite/wiki).
 
+Project maintenance plans are tracked in [Modernization](./docs/MODERNIZATION.md). Release validation steps are tracked in [Release Checklist](./docs/RELEASE.md).
+
 # Repository Organization
 * [code/nrf-connect/](./code/nrf-connect/) - Common library and samples, built with Nordic's [nRF Connect SDK](https://www.nordicsemi.com/Products/Development-software/nrf-connect-sdk).
 * [kicad/](./kicad/) - KiCad schematic, layout and fabrication files for the printed circuit board (PCB)
@@ -45,7 +47,7 @@ Information about how to order, assemble, build the samples, protect the sensor 
   <img src="img/case/screenshot.png" alt="Render of the original 3D printable case" />
 </p>
 
-We have three different 3D-printable cases:
+We have four different 3D-printable cases:
 1. Original snap-on case - [case/Top.stl](./case/Top.stl), [case/Bottom.stl](./case/Bottom.stl)
 2. High airflow - [case/b_parasite_case_high_airflow.stl](./case/b_parasite_case_high_airflow.stl)
 3. Mushroom-style - available on [Printables](https://www.printables.com/model/456571-mushroomcap-for-b-parasite-soil-moisture-sensor)
@@ -58,4 +60,4 @@ Designs and hardware to help you, when building your own:
 
 # License
 The hardware and associated design files are released under the [Creative Commons CC BY-SA 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/).
-The code is released under the [MIT license](https://opensource.org/licenses/MIT).
+The code is released under the [MIT license](https://opensource.org/licenses/MIT). See [LICENSE.md](./LICENSE.md).

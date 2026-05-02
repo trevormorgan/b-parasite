@@ -153,13 +153,35 @@ int prst_adc_soil_read(float battery_voltage, prst_adc_soil_moisture_t* out) {
   // Enable fast discharge circuit.
   RET_IF_ERR(gpio_pin_set_dt(&fast_disch_dt, 1));
   // Start PWM.
-  RET_IF_ERR(pwm_set_dt(&soil_pwm_dt, soil_pwm_dt.period, pulse));
+  int err = pwm_set_dt(&soil_pwm_dt, soil_pwm_dt.period, pulse);
+  if (err) {
+    RET_IF_ERR(gpio_pin_set_dt(&fast_disch_dt, 0));
+    return err;
+  }
   k_msleep(30);
-  RET_IF_ERR(read_adc_spec(&adc_soil_spec, &out->adc_read));
+
+  err = read_adc_spec(&adc_soil_spec, &out->adc_read);
+
   // Stop PWM.
-  RET_IF_ERR(pwm_set_dt(&soil_pwm_dt, 0, 0));
+  int cleanup_err = pwm_set_dt(&soil_pwm_dt, 0, 0);
+  if (cleanup_err) {
+    LOG_ERR("Error %d stopping soil PWM", cleanup_err);
+    if (!err) {
+      err = cleanup_err;
+    }
+  }
   // Turn off fast discharge circuit.
-  RET_IF_ERR(gpio_pin_set_dt(&fast_disch_dt, 0));
+  cleanup_err = gpio_pin_set_dt(&fast_disch_dt, 0);
+  if (cleanup_err) {
+    LOG_ERR("Error %d disabling fast discharge", cleanup_err);
+    if (!err) {
+      err = cleanup_err;
+    }
+  }
+  if (err) {
+    return err;
+  }
+
   out->percentage =
       MAX(0.0f, MIN(1.0f, get_soil_moisture_percent(battery_voltage, buf)));
   return 0;
@@ -167,10 +189,21 @@ int prst_adc_soil_read(float battery_voltage, prst_adc_soil_moisture_t* out) {
 
 int prst_adc_photo_read(float battery_voltage, prst_adc_photo_sensor_t* out) {
 #if DT_NODE_EXISTS(DT_NODELABEL(photo_transistor))
+  UNUSED_OK(battery_voltage);
   RET_IF_ERR(gpio_pin_set_dt(&photo_transistor_enable_dt, 1));
   k_msleep(10);
-  RET_IF_ERR(read_adc_spec(&adc_photo_transistor_spec, &out->adc_read));
-  RET_IF_ERR(gpio_pin_set_dt(&photo_transistor_enable_dt, 0));
+  int err = read_adc_spec(&adc_photo_transistor_spec, &out->adc_read);
+  int cleanup_err = gpio_pin_set_dt(&photo_transistor_enable_dt, 0);
+  if (cleanup_err) {
+    LOG_ERR("Error %d disabling phototransistor", cleanup_err);
+    if (!err) {
+      err = cleanup_err;
+    }
+  }
+  if (err) {
+    return err;
+  }
+
   const float phototransistor_resistor = DT_PROP(DT_NODELABEL(photo_transistor), output_ohms);
   // Assuming 10000 lux for the saturation test. Calibration with a proper light
   // meter would be better.
@@ -183,14 +216,33 @@ int prst_adc_photo_read(float battery_voltage, prst_adc_photo_sensor_t* out) {
 #elif DT_NODE_EXISTS(DT_NODELABEL(ldr))
   RET_IF_ERR(gpio_pin_set_dt(&ldr_enable_dt, 1));
   k_msleep(10);
-  RET_IF_ERR(read_adc_spec(&adc_ldr_spec, &out->adc_read));
-  RET_IF_ERR(gpio_pin_set_dt(&ldr_enable_dt, 0));
+  int err = read_adc_spec(&adc_ldr_spec, &out->adc_read);
+  int cleanup_err = gpio_pin_set_dt(&ldr_enable_dt, 0);
+  if (cleanup_err) {
+    LOG_ERR("Error %d disabling LDR", cleanup_err);
+    if (!err) {
+      err = cleanup_err;
+    }
+  }
+  if (err) {
+    return err;
+  }
+
   // The photo resistor forms a voltage divider with R.
   // The voltage here is measured in the middle of the voltage divider.
   // Vcc ---- (R_photo) ---|--- (R) ---- GND
   //                      Vout
   // So we can estimate R_photo = R * (Vcc - Vout) / Vout
   const float r = DT_PROP(DT_NODELABEL(ldr), output_ohms);
+  if (out->adc_read.voltage <= 0.0f) {
+    out->brightness = 0;
+    return 0;
+  }
+  if (out->adc_read.voltage >= battery_voltage) {
+    out->brightness = UINT16_MAX;
+    return 0;
+  }
+
   const float photo_resistance =
       r * (battery_voltage - out->adc_read.voltage) / out->adc_read.voltage;
   // The relationship between the LDR resistance and the lux level is
@@ -204,6 +256,13 @@ int prst_adc_photo_read(float battery_voltage, prst_adc_photo_sensor_t* out) {
       MAX(0, MIN(mult_value / powf(photo_resistance, pow_value), UINT16_MAX));
   LOG_DBG("Read LDR: %u lx | %.2f V", out->brightness, DOUBLE_PROMO_OK(out->adc_read.voltage));
 
+#else
+  UNUSED_OK(battery_voltage);
+  out->adc_read.raw = 0;
+  out->adc_read.millivolts = 0;
+  out->adc_read.voltage = 0.0f;
+  out->brightness = 0;
+  LOG_DBG("No photo sensor configured");
 #endif
 
   return 0;
