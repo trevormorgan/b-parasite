@@ -7,6 +7,7 @@ add_library(prstlib STATIC
 	src/button.c
 	src/led.c
 	src/sensors.c
+	src/sensor_math.c
 	src/shtc3.c
 )
 

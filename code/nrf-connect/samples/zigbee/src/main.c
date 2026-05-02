@@ -1,4 +1,3 @@
-#include <math.h>
 #include <prstlib/adc.h>
 #include <prstlib/button.h>
 #include <prstlib/led.h>
@@ -23,6 +22,7 @@
 #include "prst_zb_endpoint_defs.h"
 #include "prst_zb_soil_moisture_defs.h"
 #include "restart_handler.h"
+#include "sensor_attrs.h"
 #include "watchdog.h"
 
 LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
@@ -33,9 +33,6 @@ static prst_sensors_t sensors;
 
 static bool joining_signal_received = false;
 static bool stack_initialised = false;
-
-#define PRST_ZB_ILLUMINANCE_MEASURED_VALUE_UNKNOWN 0xffff
-#define PRST_ZB_ILLUMINANCE_MEASURED_VALUE_MAX 0xfffe
 
 static void led_flashing_cb(struct k_timer *timer) {
   prst_led_toggle();
@@ -180,12 +177,8 @@ void update_sensors_cb(zb_uint8_t arg) {
                          &soil_moisture);
 
   // Illuminance in 10000 * log_10(lux) + 1. 0xffff means invalid/unknown.
-  zb_uint16_t log_lux = PRST_ZB_ILLUMINANCE_MEASURED_VALUE_UNKNOWN;
-  if (sensors.photo.brightness > 0) {
-    log_lux =
-        MIN(10000 * log10f((float)sensors.photo.brightness) + 1,
-            PRST_ZB_ILLUMINANCE_MEASURED_VALUE_MAX);
-  }
+  zb_uint16_t log_lux =
+      prst_zb_encode_illuminance_measured_value(sensors.photo.brightness);
   prst_zb_set_attr_value(ZB_ZCL_CLUSTER_ID_ILLUMINANCE_MEASUREMENT,
                          ZB_ZCL_ATTR_ILLUMINANCE_MEASUREMENT_MEASURED_VALUE_ID,
                          &log_lux);

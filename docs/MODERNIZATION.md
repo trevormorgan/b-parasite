@@ -9,6 +9,7 @@ This plan keeps the project shippable while moving the software, hardware, and r
 - Firmware builds with Nordic nRF Connect SDK 2.7 in Docker. CI and the devcontainer now pin the SDK container by digest to avoid accidental toolchain drift.
 - BLE is the primary firmware path. It supports BTHome v2, legacy BTHome v1, and the older b-parasite ESPHome encoding.
 - Zigbee is useful but still experimental. It needs explicit compatibility tests before being treated as a production firmware.
+- A lightweight host test harness now lives in `tests/host`. It covers BTHome v2 encoding fixtures, battery/soil/light math, Zigbee illuminance encoding, and double-reset flag matching.
 - Hardware design files are KiCad 7-era artifacts, with generated Gerbers from KiCad 7.0.1.
 - The main hardware platform is still sound for a CR2032 soil sensor: nRF52840 or nRF52833 module, SHTC3, ALS-PT19, and capacitive soil sensing.
 
@@ -18,12 +19,10 @@ This plan keeps the project shippable while moving the software, hardware, and r
 2. Create a migration branch for nRF Connect SDK 3.x. Nordic's April 2026 SDK 3.3 release adds broader nRF54 support and continues the move away from Partition Manager toward devicetree-based flash partitioning for multi-image builds.
 3. Move any multi-image or bootloader work toward sysbuild and devicetree partitioning as part of the SDK 3.x migration.
 4. Treat BLE BTHome v2 as the default production firmware. Keep legacy encodings buildable for compatibility, but avoid new features in legacy packet formats.
-5. Add host-side tests for:
-   - BTHome v2 packet encoding fixtures.
-   - Battery percentage and voltage conversion edges.
-   - Soil calibration math.
-   - Illuminance encoding, especially zero and saturation cases.
-   - Double-reset flag parsing.
+5. Expand host-side tests beyond the initial suite:
+   - Add legacy BTHome v1 and b-parasite packet fixtures if those encodings remain supported.
+   - Add more battery and soil calibration boundary vectors from measured data.
+   - Add reset and sensor error-path tests as code is split into testable helpers.
 6. Add firmware behavior tests with Zephyr ztest where hardware is not required.
 7. Add a small hardware-in-loop smoke test later: flash one nRF52840 board, read one BLE advertisement, and verify decoded temperature, humidity, soil, battery, and light fields.
 8. Replace normal field-failure asserts with explicit retries, error counters, and last-known-good behavior where the device can safely continue.

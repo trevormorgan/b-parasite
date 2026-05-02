@@ -6,25 +6,26 @@ Use this checklist for firmware or hardware releases. Keep release notes factual
 
 1. Start from a clean branch with only intended changes.
 2. Confirm the pinned nRF Connect SDK Docker image in `.github/actions/build/action.yml` and `.devcontainer/devcontainer.json`.
-3. Run the firmware CI workflow on the release branch.
-4. Confirm artifacts exist for:
+3. Run `python3 tests/host/run.py`.
+4. Run the firmware CI workflow on the release branch.
+5. Confirm artifacts exist for:
    - `blinky_nrf52840.hex`
    - `input_nrf52840.hex`
    - `soil_read_loop_nrf52840.hex`
    - BLE `nrf52840` and `nrf52833` builds for revisions `1.0.0`, `1.1.0`, `1.2.0`, and `2.0.0`
    - Zigbee `nrf52840` and `nrf52833` builds for revisions `1.2.0` and `2.0.0`
-5. Generate checksums for every released `.hex` artifact.
-6. Flash the BLE BTHome v2 image on at least one physical board.
-7. Verify Home Assistant discovers the device through BTHome v2 and reports:
+6. Generate checksums for every released `.hex` artifact.
+7. Flash the BLE BTHome v2 image on at least one physical board.
+8. Verify Home Assistant discovers the device through BTHome v2 and reports:
    - Temperature
    - Humidity
    - Soil moisture
    - Battery voltage and percentage
    - Illuminance, when the board revision has a light sensor
-8. Verify a board revision without a light sensor advertises valid data and does not publish garbage illuminance values.
-9. Power-profile at least one BLE build after changes that touch sleep, sensing, advertising, GPIO, PWM, I2C, or ADC behavior.
-10. If Zigbee is included in the release, flash a board, join it to a coordinator, verify cluster updates, and test the configured factory-reset method.
-11. Document known caveats, supported board revisions, and compatibility-breaking changes in the release notes.
+9. Verify a board revision without a light sensor advertises valid data and does not publish garbage illuminance values.
+10. Power-profile at least one BLE build after changes that touch sleep, sensing, advertising, GPIO, PWM, I2C, or ADC behavior.
+11. If Zigbee is included in the release, flash a board, join it to a coordinator, verify cluster updates, and test the configured factory-reset method.
+12. Document known caveats, supported board revisions, and compatibility-breaking changes in the release notes.
 
 ## Hardware Release
 

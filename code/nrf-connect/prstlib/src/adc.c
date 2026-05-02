@@ -1,6 +1,5 @@
 #include "prstlib/adc.h"
 
-#include <math.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
@@ -9,6 +8,7 @@
 #include <zephyr/logging/log.h>
 
 #include "prstlib/macros.h"
+#include "prstlib/sensor_math.h"
 
 LOG_MODULE_REGISTER(adc, CONFIG_PRSTLIB_LOG_LEVEL);
 
@@ -53,55 +53,6 @@ struct gpio_dt_spec ldr_enable_dt =
 
 #endif
 
-typedef struct {
-  // High (h) and low (p) voltage (v) and % (p) points.
-  float vh, vl, ph, pl;
-} batt_disch_linear_section_t;
-
-static void set_battery_percent(const prst_adc_read_t* read, prst_batt_t* out) {
-  // Must be sorted by .vh.
-  static const batt_disch_linear_section_t sections[] = {
-      {.vh = 3.00f, .vl = 2.90f, .ph = 1.00f, .pl = 0.42f},
-      {.vh = 2.90f, .vl = 2.74f, .ph = 0.42f, .pl = 0.18f},
-      {.vh = 2.74f, .vl = 2.44f, .ph = 0.18f, .pl = 0.06f},
-      {.vh = 2.44f, .vl = 2.01f, .ph = 0.06f, .pl = 0.00f},
-  };
-
-  const float v = read->voltage;
-
-  if (v > sections[0].vh) {
-    out->percentage = 1.0f;
-    return;
-  }
-  for (int i = 0; i < ARRAY_SIZE(sections); i++) {
-    const batt_disch_linear_section_t* s = &sections[i];
-    if (v > s->vl) {
-      out->percentage = s->pl + (v - s->vl) * ((s->ph - s->pl) / (s->vh - s->vl));
-      return;
-    }
-  }
-  out->percentage = 0.0f;
-  return;
-}
-
-static inline float eval_poly(const int coeffs[3], float x) {
-  // The coefficients are specified times 1000, as a workaround the lack of support for floating
-  // points in devicetree bindings.
-  return (coeffs[0] + coeffs[1] * x + coeffs[2] * x * x) / 1000.0f;
-}
-
-static inline float get_soil_moisture_percent(float battery_voltage,
-                                              int16_t raw_adc_output) {
-  const float x = battery_voltage;
-  const float dry = eval_poly(dry_coeffs, x);
-  const float wet = eval_poly(wet_coeffs, x);
-  const float percent = (raw_adc_output - dry) / (wet - dry);
-  LOG_DBG("Read soil moisture 2: %.2f | Raw %u | Batt: %.2f | Dry: %.2f | Wet: %.2f",
-          DOUBLE_PROMO_OK(100 * percent),
-          raw_adc_output, DOUBLE_PROMO_OK(x), DOUBLE_PROMO_OK(dry), DOUBLE_PROMO_OK(wet));
-  return percent;
-}
-
 static int read_adc_spec(const struct adc_dt_spec* spec, prst_adc_read_t* out) {
   RET_IF_ERR(adc_sequence_init_dt(spec, &sequence));
 
@@ -145,7 +96,7 @@ int prst_adc_init() {
 
 int prst_adc_batt_read(prst_batt_t* out) {
   RET_IF_ERR(read_adc_spec(&adc_batt_spec, &out->adc_read));
-  set_battery_percent(&out->adc_read, out);
+  out->percentage = prst_battery_percent_from_voltage(out->adc_read.voltage);
   return 0;
 }
 
@@ -182,8 +133,16 @@ int prst_adc_soil_read(float battery_voltage, prst_adc_soil_moisture_t* out) {
     return err;
   }
 
-  out->percentage =
-      MAX(0.0f, MIN(1.0f, get_soil_moisture_percent(battery_voltage, buf)));
+  const float dry = prst_soil_calibration_poly_eval(dry_coeffs, battery_voltage);
+  const float wet = prst_soil_calibration_poly_eval(wet_coeffs, battery_voltage);
+  const float percent = prst_soil_moisture_percent_from_adc(
+      battery_voltage, buf, dry_coeffs, wet_coeffs);
+  LOG_DBG("Read soil moisture 2: %.2f | Raw %u | Batt: %.2f | Dry: %.2f | Wet: %.2f",
+          DOUBLE_PROMO_OK(100 * percent),
+          buf, DOUBLE_PROMO_OK(battery_voltage), DOUBLE_PROMO_OK(dry),
+          DOUBLE_PROMO_OK(wet));
+
+  out->percentage = MAX(0.0f, MIN(1.0f, percent));
   return 0;
 }
 
@@ -205,12 +164,8 @@ int prst_adc_photo_read(float battery_voltage, prst_adc_photo_sensor_t* out) {
   }
 
   const float phototransistor_resistor = DT_PROP(DT_NODELABEL(photo_transistor), output_ohms);
-  // Assuming 10000 lux for the saturation test. Calibration with a proper light
-  // meter would be better.
-  const float lux_sun = 10000.0f;
-  const float current_sun = 3.59e-3f;
-  const float current = out->adc_read.voltage / phototransistor_resistor;
-  out->brightness = MAX(0, MIN(lux_sun * current / current_sun, UINT16_MAX));
+  out->brightness = prst_phototransistor_brightness_from_voltage(
+      out->adc_read.voltage, phototransistor_resistor);
   LOG_DBG("Read phototransistor: %u lx | %.2f V", out->brightness, DOUBLE_PROMO_OK(out->adc_read.voltage));
 
 #elif DT_NODE_EXISTS(DT_NODELABEL(ldr))
@@ -234,26 +189,8 @@ int prst_adc_photo_read(float battery_voltage, prst_adc_photo_sensor_t* out) {
   //                      Vout
   // So we can estimate R_photo = R * (Vcc - Vout) / Vout
   const float r = DT_PROP(DT_NODELABEL(ldr), output_ohms);
-  if (out->adc_read.voltage <= 0.0f) {
-    out->brightness = 0;
-    return 0;
-  }
-  if (out->adc_read.voltage >= battery_voltage) {
-    out->brightness = UINT16_MAX;
-    return 0;
-  }
-
-  const float photo_resistance =
-      r * (battery_voltage - out->adc_read.voltage) / out->adc_read.voltage;
-  // The relationship between the LDR resistance and the lux level is
-  // logarithmic. We need to solve a logarithmic equation to find the lux
-  // level, given the LDR resistance we just measured.
-  // These values work for the GL5528 LDR and were borrowed from
-  // https://github.com/QuentinCG/Arduino-Light-Dependent-Resistor-Library.
-  const float mult_value = 32017200.0f;
-  const float pow_value = 1.5832f;
-  out->brightness =
-      MAX(0, MIN(mult_value / powf(photo_resistance, pow_value), UINT16_MAX));
+  out->brightness = prst_ldr_brightness_from_voltage(
+      battery_voltage, out->adc_read.voltage, r);
   LOG_DBG("Read LDR: %u lx | %.2f V", out->brightness, DOUBLE_PROMO_OK(out->adc_read.voltage));
 
 #else
