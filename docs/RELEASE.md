@@ -30,29 +30,32 @@ Use this checklist for firmware or hardware releases. Keep release notes factual
 ## Hardware Release
 
 1. Open the KiCad project with the release KiCad version and save files intentionally.
-2. Run ERC and DRC. Record any waivers with a short explanation.
-3. Regenerate:
+2. For v2.1 boards, confirm every item in [Hardware v2.1 Board Backlog](./HARDWARE_V2_1.md) is either complete, explicitly deferred, or marked not applicable for the release.
+3. Run ERC and DRC. Record any waivers with a short explanation.
+4. Regenerate:
    - Schematic PDF
    - Gerbers
    - Drill files
    - BOM
    - Pick-and-place file
    - Board render or photos
-4. Check BOM fields for manufacturer part number, supplier part number, LCSC/JLC code, quantity, side, and DNP status.
-5. Confirm polarity and orientation for LED, diode, SHTC3 or successor sensor, module, and battery holder.
-6. Confirm test pads and programming access are reachable in the intended case.
-7. Upload fabrication files to the intended manufacturer and resolve all parser warnings before tagging.
-8. Build first articles before marking the hardware release final.
-9. On first articles, verify:
+5. Check BOM fields for manufacturer part number, supplier part number, LCSC/JLC code, quantity, side, and DNP status.
+6. Confirm polarity and orientation for LED, diode, SHTC3 or successor sensor, module, and battery holder.
+7. Confirm test pads and programming access are reachable in the intended case.
+8. Confirm coating keepouts, antenna clearance, battery contacts, soil electrodes, and programming pads are documented.
+9. Upload fabrication files to the intended manufacturer and resolve all parser warnings before tagging.
+10. Build first articles before marking the hardware release final.
+11. On first articles, verify:
    - SWD flashing
    - Boot and BLE advertisement
    - Temperature and humidity readings
    - Soil sensor dry and wet readings
    - Battery voltage reading
    - Light reading, when populated
+   - Hardware revision strap, when populated
    - Sleep current
    - Active current during sensing and radio activity
-10. Publish exact fabrication files, KiCad version, assembly notes, and known hardware caveats.
+12. Publish exact fabrication files, KiCad version, assembly notes, and known hardware caveats.
 
 ## Release Notes Template
 

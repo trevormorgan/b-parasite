@@ -29,7 +29,7 @@ This repository also hosts a few different firmware samples for b-parasite.
 # Documentation
 Information about how to order, assemble, build the samples, protect the sensor and flash the firmware is on [the Wiki](https://github.com/rbaron/b-parasite/wiki).
 
-Project maintenance plans are tracked in [Modernization](./docs/MODERNIZATION.md). Release validation steps are tracked in [Release Checklist](./docs/RELEASE.md).
+Project maintenance plans are tracked in [Modernization](./docs/MODERNIZATION.md). Board-level v2.1 work is tracked in [Hardware v2.1 Board Backlog](./docs/HARDWARE_V2_1.md). Release validation steps are tracked in [Release Checklist](./docs/RELEASE.md).
 
 # Repository Organization
 * [code/nrf-connect/](./code/nrf-connect/) - Common library and samples, built with Nordic's [nRF Connect SDK](https://www.nordicsemi.com/Products/Development-software/nrf-connect-sdk).

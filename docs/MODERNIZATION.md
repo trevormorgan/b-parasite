@@ -31,13 +31,14 @@ This plan keeps the project shippable while moving the software, hardware, and r
 
 ## Hardware Track
 
-1. Cut a v2.1 maintenance board before a v3.0 redesign. Keep the nRF52 module footprint and existing mechanical envelope unless a specific defect requires otherwise.
+1. Cut a v2.1 maintenance board before a v3.0 redesign. Keep the nRF52 module footprint and existing mechanical envelope unless a specific defect requires otherwise. Use [Hardware v2.1 Board Backlog](./HARDWARE_V2_1.md) as the working checklist.
 2. For v2.1, prioritize manufacturing and field reliability:
    - Add or improve test pads for power, reset, SWD, I2C, soil drive, soil sense, and key GPIOs.
    - Add a clear shipping or battery-disconnect option if it can be done without hurting size or cost.
    - Re-check CR2032 reservoir capacitance and brownout margin during radio bursts.
    - Define coating keepouts around the humidity sensor, electrode area, connector/test pads, battery contacts, and antenna.
    - Improve BOM metadata: manufacturer part number, supplier part number, LCSC/JLC code, quantity, side, DNP status, and alternates.
+   - Add a board-revision strap only after confirming the selected spare pin and resistor values meet the sleep-current budget.
 3. Migrate the KiCad project to KiCad 10 on a dedicated branch. Regenerate schematic PDF, Gerbers, drill files, pick-and-place, and BOM from the migrated project.
 4. Add automated ERC/DRC and fabrication export once the KiCad 10 migration is stable, preferably through KiBot or another reproducible KiCad CLI flow.
 5. Prototype a v3.0 sensor stack separately:
